@@ -182,35 +182,48 @@ public class Launcher extends CordovaPlugin {
 
 	private boolean launch(JSONArray args) throws JSONException {
 		final JSONObject options = args.getJSONObject(0);
+		
+		boolean hasDataType = options.has("dataType") && !options.getString("dataType").equals("");
+		boolean hasFlags = options.has("flags") && options.getInt("flags") != 0;
+		boolean hasURI = options.has("uri") && !options.getString("uri").equals("");
+		boolean hasPackageName = options.has("packageName") && !options.getString("packageName").equals("");
+		boolean hasExtras = options.has("extras") && !options.getJSONArray("extras").equals("");
+		boolean hasActionName = options.has("actionName") && !options.getString("actionName").equals("");
+		
 		Bundle extras = null;
-		if (options.has("extras")) {
+		if (hasExtras) {
 			extras = createExtras(options.getJSONArray("extras"));
 		} else {
 			extras = new Bundle();
 		}
+		
 		int flags = 0;
-		if (options.has("flags")) {
+		if (hasFlags) {
 			flags = options.getInt("flags");
 		}
 
-		if (options.has("uri") && (options.has("packageName") || options.has("dataType"))) {
+		if (hasURI && (hasPackageName || hasDataType)) {
 			String dataType = null;
 			String packageName = null;
-			if (options.has("packageName")) {
+			if (hasPackageName) {
 				packageName = options.getString("packageName");
 			}
-			if (options.has("dataType")) {
+			if (hasDataType) {
 				dataType = options.getString("dataType");
 			}
 			launchAppWithData(packageName, options.getString("uri"), dataType, extras);
 			return true;
-		} else if (options.has("packageName")) {
-			launchApp(options.getString("packageName"), extras);
+		} else if (hasPackageName) {
+			String dataType = null;
+			if (hasDataType) {
+				dataType = options.getString("dataType");
+			}
+			launchApp(options.getString("packageName"), dataType, extras);
 			return true;
-		} else if (options.has("uri")) {
+		} else if (hasURI) {
 			launchIntent(options.getString("uri"), extras, flags);
 			return true;
-		} else if (options.has("actionName")) {
+		} else if (hasActionName) {
 			launchAction(options.getString("actionName"), extras);
 			return true;
 		}
@@ -350,10 +363,13 @@ public class Launcher extends CordovaPlugin {
 		cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
 			public void run() {
 				Intent intent = new Intent(Intent.ACTION_VIEW);
-				if (dataType != null) {
-					intent.setDataAndType(Uri.parse(uri), dataType);
-				} else {
+				
+				if (uri != null && !uri.equals("")){
 					intent.setData(Uri.parse(uri));
+				} 
+				
+				if (dataType != null && !dataType.equals("")) {
+					intent.setType(dataType);
 				}
 
 				if (packageName != null && !packageName.equals("")) {
@@ -375,18 +391,34 @@ public class Launcher extends CordovaPlugin {
 		});
 	}
 
-	private void launchApp(final String packageName, final Bundle extras) {
+	private void launchApp(final String packageName, final String dataType, final Bundle extras) {
 		final CordovaInterface mycordova = cordova;
 		final CordovaPlugin plugin = this;
 		Log.i(TAG, "Trying to launch app: " + packageName);
 		cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
 			public void run() {
 				final PackageManager pm = plugin.webView.getContext().getPackageManager();
-				final Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
-				boolean appNotFound = launchIntent == null;
-
+				String pkgName = packageName;
+				String passedActivityName = null;
+				final Intent launchIntent;
+				boolean appNotFound = true;
+				if (packageName.contains("/")) {
+					String[] items = packageName.split("/");
+					pkgName = items[0];
+					passedActivityName = items[1];
+					launchIntent = new Intent(passedActivityName);
+					launchIntent.setPackage(pkgName);
+					appNotFound = false;
+				}
+				else {
+					launchIntent = pm.getLaunchIntentForPackage(packageName);
+					appNotFound = launchIntent == null;
+				}				
 				if (!appNotFound) {
 					try {
+						if (dataType != null && !dataType.equals("")) {
+							launchIntent.setType(dataType);
+						}
 						launchIntent.putExtras(extras);
 						mycordova.startActivityForResult(plugin, launchIntent, LAUNCH_REQUEST);
 						((Launcher) plugin).callbackLaunched();
@@ -413,7 +445,9 @@ public class Launcher extends CordovaPlugin {
 					intent.setFlags(flags);
 				}
 				try {
-					intent.putExtras(extras);
+					if (extras != null) {
+						intent.putExtras(extras);
+					}
 					mycordova.startActivityForResult(plugin, intent, LAUNCH_REQUEST);
 					((Launcher) plugin).callbackLaunched();
 				} catch (ActivityNotFoundException e) {
