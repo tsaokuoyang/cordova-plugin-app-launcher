@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.util.Log;
@@ -24,6 +25,7 @@ import android.os.Parcelable;
 import android.os.Build;
 
 import java.lang.reflect.Array;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -42,8 +44,10 @@ public class Launcher extends CordovaPlugin {
 	private CallbackContext callback;
 
 	private abstract class LauncherRunnable implements Runnable {
+		public CordovaInterface cordova;
 		public CallbackContext callbackContext;
-		LauncherRunnable(CallbackContext cb) {
+		LauncherRunnable(CordovaInterface cordova, CallbackContext cb) {
+			this.cordova = cordova;
 			this.callbackContext = cb;
 		}
 	}
@@ -66,7 +70,7 @@ public class Launcher extends CordovaPlugin {
 
 		if (options.has("packageName")) {
 			final String appPackageName = options.getString("packageName");
-			cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
+			cordova.getThreadPool().execute(new LauncherRunnable(this.cordova, this.callback) {
 				public void run() {
 					final Intent intent = new Intent(Intent.ACTION_VIEW);
 					String packageName = appPackageName;
@@ -99,7 +103,7 @@ public class Launcher extends CordovaPlugin {
 			final String uri = options.getString("uri");
 			final String dataType = options.has("dataType") ? options.getString("dataType") : null;
 
-			cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
+			cordova.getThreadPool().execute(new LauncherRunnable(this.cordova, this.callback) {
 				public void run() {
 					final PackageManager pm = plugin.webView.getContext().getPackageManager();
 					final Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -154,7 +158,7 @@ public class Launcher extends CordovaPlugin {
 
 	private void canLaunchAction(final String actionName) {
 		final CordovaPlugin plugin = this;
-		cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
+		cordova.getThreadPool().execute(new LauncherRunnable(this.cordova, this.callback) {
 			public void run() {
 				final PackageManager pm = plugin.webView.getContext().getPackageManager();
 				final Intent intent = new Intent(actionName);
@@ -347,7 +351,7 @@ public class Launcher extends CordovaPlugin {
 		final CordovaInterface mycordova = cordova;
 		final CordovaPlugin plugin = this;
 		final CallbackContext callbackContext = this.callback;
-		cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
+		cordova.getThreadPool().execute(new LauncherRunnable(this.cordova, this.callback) {
 			public void run() {
 				Intent intent = new Intent(Intent.ACTION_VIEW);
 				if (dataType != null) {
@@ -379,7 +383,7 @@ public class Launcher extends CordovaPlugin {
 		final CordovaInterface mycordova = cordova;
 		final CordovaPlugin plugin = this;
 		Log.i(TAG, "Trying to launch app: " + packageName);
-		cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
+		cordova.getThreadPool().execute(new LauncherRunnable(this.cordova, this.callback) {
 			public void run() {
 				final PackageManager pm = plugin.webView.getContext().getPackageManager();
 				final Intent launchIntent = pm.getLaunchIntentForPackage(packageName);
@@ -405,21 +409,40 @@ public class Launcher extends CordovaPlugin {
 	private void launchIntent(final String uri, final Bundle extras, final int flags) {
 		final CordovaInterface mycordova = cordova;
 		final CordovaPlugin plugin = this;
-		cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
+		cordova.getThreadPool().execute(new LauncherRunnable(this.cordova, this.callback) {
 			public void run() {
-				Intent intent = new Intent(Intent.ACTION_VIEW);
-				intent.setData(Uri.parse(uri));
-				if (flags != 0) {
-					intent.setFlags(flags);
-				}
-				try {
-					intent.putExtras(extras);
-					mycordova.startActivityForResult(plugin, intent, LAUNCH_REQUEST);
-					((Launcher) plugin).callbackLaunched();
-				} catch (ActivityNotFoundException e) {
-					Log.e(TAG, "Error: Activity for " + uri + " was not found.");
-					e.printStackTrace();
-					callbackContext.error("Activity not found for uri.");
+				if (uri.startsWith("intent://")) {
+					try {
+						Context context=  this.cordova.getActivity().getApplicationContext();
+						Intent intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);
+						intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+
+						context.startActivity(intent);
+
+						callbackContext.success();
+					} catch ( ActivityNotFoundException e  ) {
+						callbackContext.error(e.getMessage());
+					} catch ( URISyntaxException e ) {
+						callbackContext.error(e.getMessage());
+					}
+
+				} else {
+
+
+					Intent intent = new Intent(Intent.ACTION_VIEW);
+					intent.setData(Uri.parse(uri));
+					if (flags != 0) {
+						intent.setFlags(flags);
+					}
+					try {
+						intent.putExtras(extras);
+						mycordova.startActivityForResult(plugin, intent, LAUNCH_REQUEST);
+						((Launcher) plugin).callbackLaunched();
+					} catch (ActivityNotFoundException e) {
+						Log.e(TAG, "Error: Activity for " + uri + " was not found.");
+						e.printStackTrace();
+						callbackContext.error("Activity not found for uri.");
+					}
 				}
 			}
 		});
@@ -428,7 +451,7 @@ public class Launcher extends CordovaPlugin {
 	private void launchAction(final String actionName, final Bundle extras) {
 		final CordovaInterface mycordova = cordova;
 		final CordovaPlugin plugin = this;
-		cordova.getThreadPool().execute(new LauncherRunnable(this.callback) {
+		cordova.getThreadPool().execute(new LauncherRunnable(this.cordova, this.callback) {
 			public void run() {
 				Intent intent = new Intent(actionName);
 				try {
