@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.Build;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -464,6 +465,15 @@ public class Launcher extends CordovaPlugin {
 		referer_return :
 		user_id	:
 
+            query = "license=" + license +
+                    "&url=" + java.net.URLEncoder.encode(http_url, "UTF-8" ) +
+                    "&referer=" + java.net.URLEncoder.encode("https://learn.347.com.tw/", "UTF-8" ) +
+                    "&debug=true" +
+                    "&version=1.0.0" +
+                    "&pmp=true" +
+                    "&referer_return=false" +
+                    "&user_id=" + user_id;
+
 	*/
 
 	private boolean launchStarplayer(JSONArray args) throws JSONException {
@@ -475,7 +485,7 @@ public class Launcher extends CordovaPlugin {
 		if (options.has("license")) {
 			sLicense = options.getString("license");
 		} else {
-			callbackContext.error("No license argument!");
+			callback.error("No license argument!");
 			return false;
 		}
 
@@ -483,7 +493,7 @@ public class Launcher extends CordovaPlugin {
 		if (options.has("url")) {
 			sUrl = options.getString("url");
 		} else {
-			callbackContext.error("No url argument!");
+			callback.error("No url argument!");
 			return false;
 		}
 
@@ -491,7 +501,7 @@ public class Launcher extends CordovaPlugin {
 		if (options.has("referer")) {
 			sReferer = options.getString("referer");
 		} else {
-			callbackContext.error("No referer argument!");
+			callback.error("No referer argument!");
 			return false;
 		}
 
@@ -499,7 +509,7 @@ public class Launcher extends CordovaPlugin {
 		if (options.has("debug")) {
 			sDebug = options.getString("debug");
 		} else {
-			callbackContext.error("No debug argument!");
+			callback.error("No debug argument!");
 			return false;
 		}
 
@@ -507,7 +517,7 @@ public class Launcher extends CordovaPlugin {
 		if (options.has("version")) {
 			sVersion = options.getString("version");
 		} else {
-			callbackContext.error("No version argument!");
+			callback.error("No version argument!");
 			return false;
 		}
 
@@ -515,7 +525,7 @@ public class Launcher extends CordovaPlugin {
 		if (options.has("pmp")) {
 			sPmp = options.getString("pmp");
 		} else {
-			callbackContext.error("No pmp argument!");
+			callback.error("No pmp argument!");
 			return false;
 		}
 
@@ -523,7 +533,7 @@ public class Launcher extends CordovaPlugin {
 		if (options.has("referer_return")) {
 			sRefererReturn = options.getString("referer_return");
 		} else {
-			callbackContext.error("No referer_return argument!");
+			callback.error("No referer_return argument!");
 			return false;
 		}
 
@@ -531,7 +541,7 @@ public class Launcher extends CordovaPlugin {
 		if (options.has("user_id")) {
 			sUserId = options.getString("user_id");
 		} else {
-			callbackContext.error("No user_id argument!");
+			callback.error("No user_id argument!");
 			return false;
 		}
 
@@ -539,28 +549,28 @@ public class Launcher extends CordovaPlugin {
         try {
             query = "license=" + sLicense +
                     "&url=" + java.net.URLEncoder.encode(sUrl, "UTF-8" ) +
-                    "&referer=" + java.net.URLEncoder.encode(sReferer), "UTF-8" ) +
-                    "&debug=" + sDebug
-                    "&version=" + sVersion
-                    "&pmp=" + sPmp
-                    "&referer_return=" + sRefererReturn
+                    "&referer=" + java.net.URLEncoder.encode(sReferer, "UTF-8" ) +
+                    "&debug=" + sDebug +
+                    "&version=" + sVersion +
+                    "&pmp=" + sPmp +
+                    "&referer_return=" + sRefererReturn +
                     "&user_id=" + sUserId;
         } catch (UnsupportedEncodingException e) {
             // e.printStackTrace();
-			callbackContext.error( e.getString() );
+			this.callback.error( e.getMessage() );
 			return false;
         }
 
         try {
+			Context context=  this.cordova.getActivity().getApplicationContext();
 			String auth = "starplayer://";
-			final String query = txtData.getText().toString();
 			Uri uri = Uri.parse(auth + "?" + query);
 
 			Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-			MainActivity.this.startActivity(intent);
+			context.startActivity(intent);
         } catch (Exception e) {
             // e.printStackTrace();
-			callbackContext.error( e.getString() );
+			this.callback.error( e.getMessage() );
 			return false;
         }
 
