@@ -39,6 +39,7 @@ public class Launcher extends CordovaPlugin {
 	public static final String TAG = "Launcher Plugin";
 	public static final String ACTION_CAN_LAUNCH = "canLaunch";
 	public static final String ACTION_LAUNCH = "launch";
+	public static final String ACTION_LAUNCH_STARPLAYER = "launchStarplayer";
 	public static final int LAUNCH_REQUEST = 0;
 
 	private CallbackContext callback;
@@ -59,6 +60,8 @@ public class Launcher extends CordovaPlugin {
 			return canLaunch(args);
 		} else if (ACTION_LAUNCH.equals(action)) {
 			return launch(args);
+		} else if (ACTION_LAUNCH_STARPLAYER.equals(action)) {
+			return launchStarplayer(args);
 		}
 		return false;
 	}
@@ -411,38 +414,20 @@ public class Launcher extends CordovaPlugin {
 		final CordovaPlugin plugin = this;
 		cordova.getThreadPool().execute(new LauncherRunnable(this.cordova, this.callback) {
 			public void run() {
-				if (uri.startsWith("intent://")) {
-					try {
-						Context context=  this.cordova.getActivity().getApplicationContext();
-						Intent intent = Intent.parseUri(uri, Intent.URI_INTENT_SCHEME);
-						intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
-						context.startActivity(intent);
-
-						callbackContext.success();
-					} catch ( ActivityNotFoundException e  ) {
-						callbackContext.error(e.getMessage());
-					} catch ( URISyntaxException e ) {
-						callbackContext.error(e.getMessage());
-					}
-
-				} else {
-
-
-					Intent intent = new Intent(Intent.ACTION_VIEW);
-					intent.setData(Uri.parse(uri));
-					if (flags != 0) {
-						intent.setFlags(flags);
-					}
-					try {
-						intent.putExtras(extras);
-						mycordova.startActivityForResult(plugin, intent, LAUNCH_REQUEST);
-						((Launcher) plugin).callbackLaunched();
-					} catch (ActivityNotFoundException e) {
-						Log.e(TAG, "Error: Activity for " + uri + " was not found.");
-						e.printStackTrace();
-						callbackContext.error("Activity not found for uri.");
-					}
+				Intent intent = new Intent(Intent.ACTION_VIEW);
+				intent.setData(Uri.parse(uri));
+				if (flags != 0) {
+					intent.setFlags(flags);
+				}
+				try {
+					intent.putExtras(extras);
+					mycordova.startActivityForResult(plugin, intent, LAUNCH_REQUEST);
+					((Launcher) plugin).callbackLaunched();
+				} catch (ActivityNotFoundException e) {
+					Log.e(TAG, "Error: Activity for " + uri + " was not found.");
+					e.printStackTrace();
+					callbackContext.error("Activity not found for uri.");
 				}
 			}
 		});
@@ -465,6 +450,121 @@ public class Launcher extends CordovaPlugin {
 				}
 			}
 		});
+	}
+
+	/*
+
+		須提供參數
+		license :
+		url		:
+		referer	:
+		debug	:
+		version	:
+		pmp		:
+		referer_return :
+		user_id	:
+
+	*/
+
+	private boolean launchStarplayer(JSONArray args) throws JSONException {
+		final JSONObject options = args.getJSONObject(0);
+		final CordovaInterface mycordova = cordova;
+		final CordovaPlugin plugin = this;
+
+		String sLicense = null;
+		if (options.has("license")) {
+			sLicense = options.getString("license");
+		} else {
+			callbackContext.error("No license argument!");
+			return false;
+		}
+
+		String sUrl = null;
+		if (options.has("url")) {
+			sUrl = options.getString("url");
+		} else {
+			callbackContext.error("No url argument!");
+			return false;
+		}
+
+		String sReferer = null;
+		if (options.has("referer")) {
+			sReferer = options.getString("referer");
+		} else {
+			callbackContext.error("No referer argument!");
+			return false;
+		}
+
+		String sDebug = null;
+		if (options.has("debug")) {
+			sDebug = options.getString("debug");
+		} else {
+			callbackContext.error("No debug argument!");
+			return false;
+		}
+
+		String sVersion = null;
+		if (options.has("version")) {
+			sVersion = options.getString("version");
+		} else {
+			callbackContext.error("No version argument!");
+			return false;
+		}
+
+		String sPmp = null;
+		if (options.has("pmp")) {
+			sPmp = options.getString("pmp");
+		} else {
+			callbackContext.error("No pmp argument!");
+			return false;
+		}
+
+		String sRefererReturn = null;
+		if (options.has("referer_return")) {
+			sRefererReturn = options.getString("referer_return");
+		} else {
+			callbackContext.error("No referer_return argument!");
+			return false;
+		}
+
+		String sUserId = null;
+		if (options.has("user_id")) {
+			sUserId = options.getString("user_id");
+		} else {
+			callbackContext.error("No user_id argument!");
+			return false;
+		}
+
+        String query = null;
+        try {
+            query = "license=" + sLicense +
+                    "&url=" + java.net.URLEncoder.encode(sUrl, "UTF-8" ) +
+                    "&referer=" + java.net.URLEncoder.encode(sReferer), "UTF-8" ) +
+                    "&debug=" + sDebug
+                    "&version=" + sVersion
+                    "&pmp=" + sPmp
+                    "&referer_return=" + sRefererReturn
+                    "&user_id=" + sUserId;
+        } catch (UnsupportedEncodingException e) {
+            // e.printStackTrace();
+			callbackContext.error( e.getString() );
+			return false;
+        }
+
+        try {
+			String auth = "starplayer://";
+			final String query = txtData.getText().toString();
+			Uri uri = Uri.parse(auth + "?" + query);
+
+			Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+			MainActivity.this.startActivity(intent);
+        } catch (Exception e) {
+            // e.printStackTrace();
+			callbackContext.error( e.getString() );
+			return false;
+        }
+
+		return true;
 	}
 
 	@Override
