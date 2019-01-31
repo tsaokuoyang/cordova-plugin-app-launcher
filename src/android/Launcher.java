@@ -574,6 +574,7 @@ public class Launcher extends CordovaPlugin {
 			return false;
         }
 
+		this.callback.success();
 		return true;
 	}
 
