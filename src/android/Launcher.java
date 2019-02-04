@@ -567,6 +567,7 @@ public class Launcher extends CordovaPlugin {
 			Uri uri = Uri.parse(auth + "?" + query);
 
 			Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 			context.startActivity(intent);
         } catch (Exception e) {
             // e.printStackTrace();
