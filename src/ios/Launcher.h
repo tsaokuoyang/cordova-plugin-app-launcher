@@ -10,5 +10,6 @@
 - (void)canLaunch:(CDVInvokedUrlCommand*)command;
 - (void)launch:(CDVInvokedUrlCommand*)command;
 - (void)launchStarplayer:(CDVInvokedUrlCommand*)command;
+- (void)launchStarplayerPlus:(CDVInvokedUrlCommand*)command;
 
 @end

@@ -24,6 +24,13 @@ Launcher.prototype.launchStarplayer = function(options, successCallback, errorCa
 	cordova.exec(options.successCallback || null, options.errorCallback || null, "Launcher", "launchStarplayer", [options]);
 };
 
+Launcher.prototype.launchStarplayerPlus = function(options, successCallback, errorCallback) {
+	options = options || {};
+	options.successCallback = options.successCallback || successCallback;
+	options.errorCallback = options.errorCallback || errorCallback;
+	cordova.exec(options.successCallback || null, options.errorCallback || null, "Launcher", "launchStarplayerPlus", [options]);
+};
+
 Launcher.install = function () {
 	if (!window.plugins) {
 		window.plugins = {};

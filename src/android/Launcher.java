@@ -41,6 +41,7 @@ public class Launcher extends CordovaPlugin {
 	public static final String ACTION_CAN_LAUNCH = "canLaunch";
 	public static final String ACTION_LAUNCH = "launch";
 	public static final String ACTION_LAUNCH_STARPLAYER = "launchStarplayer";
+	public static final String ACTION_LAUNCH_STARPLAYER_PLUS = "launchStarplayerPlus";
 	public static final int LAUNCH_REQUEST = 0;
 
 	private CallbackContext callback;
@@ -63,6 +64,8 @@ public class Launcher extends CordovaPlugin {
 			return launch(args);
 		} else if (ACTION_LAUNCH_STARPLAYER.equals(action)) {
 			return launchStarplayer(args);
+		} else if (ACTION_LAUNCH_STARPLAYER_PLUS.equals(action)) {
+			return launchStarplayerPlus(args);
 		}
 		return false;
 	}
@@ -475,7 +478,6 @@ public class Launcher extends CordovaPlugin {
                     "&user_id=" + user_id;
 
 	*/
-
 	private boolean launchStarplayer(JSONArray args) throws JSONException {
 		final JSONObject options = args.getJSONObject(0);
 		final CordovaInterface mycordova = cordova;
@@ -577,6 +579,33 @@ public class Launcher extends CordovaPlugin {
 
 		this.callback.success();
 		return true;
+	}
+
+	/*
+		Android 版
+		launchStarplayerPlus 只是單純呼叫 launchStarplayer
+		須提供參數
+		license :
+		url		:
+		referer	:
+		debug	:
+		version	:
+		pmp		:
+		referer_return :
+		user_id	:
+
+            query = "license=" + license +
+                    "&url=" + java.net.URLEncoder.encode(http_url, "UTF-8" ) +
+                    "&referer=" + java.net.URLEncoder.encode("https://learn.347.com.tw/", "UTF-8" ) +
+                    "&debug=true" +
+                    "&version=1.0.0" +
+                    "&pmp=true" +
+                    "&referer_return=false" +
+                    "&user_id=" + user_id;
+
+	*/
+	private boolean launchStarplayerPlus(JSONArray args) throws JSONException {
+		return this.launchStarplayer( args );
 	}
 
 	@Override
