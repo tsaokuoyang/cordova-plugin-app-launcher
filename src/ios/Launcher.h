@@ -12,4 +12,5 @@
 - (void)launchStarplayer:(CDVInvokedUrlCommand*)command;
 - (void)launchStarplayerPlus:(CDVInvokedUrlCommand*)command;
 
+- (void)openScheme:(NSString *)scheme;
 @end
