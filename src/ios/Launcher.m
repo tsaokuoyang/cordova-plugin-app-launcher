@@ -161,10 +161,10 @@
 	}
 
 
-	NSString *uri = [NSString stringWithFormat:@"starplayer://?license=%@&url=%@&referer=%@&debug=%@&version=%@&pmp=%@&referer_return=%@&from=safari&&offine_check=false&user_id=%@", 
+	NSString *uri = [NSString stringWithFormat:@"starplayer://?license=%@&url=%@&referer=%@&debug=%@&version=%@&pmp=%@&referer_return=%@&from=safari&offline_check=false&user_id=%@",
 			license, url, referer, debug, version, pmp, referer_return, user_id];
-	// NSLog(@"uri: %@", uri);
-
+	NSLog(@"starplayer uri: %@", uri);
+/*
 	if ([[UIApplication sharedApplication] canOpenURL: [NSURL URLWithString:uri]]) {
 		NSURL *launchURL = [NSURL URLWithString:uri];
 		[[UIApplication sharedApplication] openURL: launchURL];
@@ -174,6 +174,20 @@
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No app installed that can handle that uri."];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 	}
+*/
+    
+     if ([[UIApplication sharedApplication] canOpenURL: [NSURL URLWithString:uri]]) {
+        // NSURL *launchURL = [NSURL URLWithString:uri];
+        // [[UIApplication sharedApplication] openURL: launchURL];
+        [self openScheme: uri];
+
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    } else {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No app installed that can handle that uri."];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }
+    
 
 }
 
@@ -199,12 +213,6 @@
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Missing option: 'url' required."];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 	}
-	// NSString *url = [url_origin stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
-	// NSString *url = [url urlencode];
-    // NSString *url = [url_origin stringByAddingPercentEncodingWithAllowedCharacters:(NSCharacterSet *)NSUTF8StringEncoding];
-	// NSString *url = [url_origin urlEncodeUsingEncoding:NSUTF8StringEncoding];  // [url_origin stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-    // NSString *url = urlEncodeUsingEncoding:( url_origin )
-    // NSString *url = [ url_origin url// ]
 	NSString *url = [url_origin urlencode];
     // NSLog(@"uri_origin:%@\nuri:%@", url_origin, url);
 
@@ -260,6 +268,7 @@
 	}
 
 	// user_id
+    /*
 	NSString *user_id = nil;
 	if ([options objectForKey:@"user_id"]) {
 		user_id = [options objectForKey:@"user_id"];
@@ -268,20 +277,39 @@
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 	}
 
-	NSString *uri = [NSString stringWithFormat:@"starplayerplus://?license=%@&url=%@&referer=%@&debug=%@&version=%@&pmp=%@&referer_return=%@&from=safari&&offine_check=false&user_id=%@", 
-			license, url, referer, debug, version, pmp, referer_return, user_id];
-	// NSLog(@"uri: %@", uri);
+	NSString *uri = [NSString stringWithFormat:@"starplayerplus://?license=%@&url=%@&referer=%@&debug=%@&version=%@&pmp=%@&referer_return=%@&from=safari&offine_check=false&user_id=%@",
+			license, url, referer, debug, version, pmp, referer_return, user_id];
+            */
+    NSString *uri = [NSString stringWithFormat:@"starplayerplus://?license=%@&url=%@&referer=%@&debug=%@&version=%@&pmp=%@&referer_return=%@&from=safari&offline_check=false",
+            license, url, referer, debug, version, pmp, referer_return];
+	NSLog(@"starplayerplus uri: %@", uri);
 
 	if ([[UIApplication sharedApplication] canOpenURL: [NSURL URLWithString:uri]]) {
-		NSURL *launchURL = [NSURL URLWithString:uri];
-		[[UIApplication sharedApplication] openURL: launchURL];
+		// NSURL *launchURL = [NSURL URLWithString:uri];
+        // [[UIApplication sharedApplication] openURL: launchURL];
+        [self openScheme: uri];
+
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 	} else {
 		pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No app installed that can handle that uri."];
 		[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 	}
-
 }
 
+// http://www.cocoachina.com/articles/17824
+- (void)openScheme:(NSString *)scheme {
+  UIApplication *application = [UIApplication sharedApplication];
+  NSURL *URL = [NSURL URLWithString:scheme];
+
+  if ([application respondsToSelector:@selector(openURL:options:completionHandler:)]) {
+    [application openURL:URL options:@{}
+       completionHandler:^(BOOL success) {
+      NSLog(@"Open %@: %d",scheme,success);
+    }];
+  } else {
+    BOOL success = [application openURL:URL];
+    NSLog(@"Open %@: %d",scheme,success);
+  }
+}
 @end
